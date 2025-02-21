@@ -1,19 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 /*
- * SM7150-AB Google Pixel 4a specific device tree
- *
- * Copyright (c) 2024, Danila Tikhonov <danila@jiaxyga.com>
+ * Copyright (c) 2023-2024, Connor Mitchell <c.dog29@hotmail.com>
+ * Copyright (c) 2025, Danila Tikhonov <danila@jiaxyga.com>
  */
 
 /dts-v1/;
 
-#include <dt-bindings/arm/qcom,ids.h>
 #include <dt-bindings/firmware/qcom,scm.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
-#include <dt-bindings/sound/qcom,q6asm.h>
 #include <dt-bindings/usb/pd.h>
 
 #include "sm7150.dtsi"
@@ -30,21 +27,10 @@
 /delete-node/ &ipa_gsi_mem;
 /delete-node/ &gpu_mem;
 
-/*
- * Sunfish uses the SM7150-AB SoC.
- * Limit CPU clock to 2.2 GHz
- */
-&cpu6_opp14 {
-	status = "disabled";
-};
-
 / {
 	model = "Google Pixel 4a";
 	compatible = "google,sunfish", "qcom,sm7150";
 	chassis-type = "handset";
-
-	qcom,msm-id = <QCOM_ID_SM7150 0>;
-	qcom,board-id = <0xe2805 0>;
 
 	aliases {
 		bluetooth0 = &bluetooth;
@@ -53,21 +39,12 @@
 		wifi0 = &wifi;
 	};
 
-	battery: battery {
-		compatible = "simple-battery";
-
-		charge-full-design-microamp-hours = <3080000>;
-		voltage-min-design-microvolt = <3400000>;
-		voltage-max-design-microvolt = <4400000>;
-	};
-
 	chosen {
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
 
 		stdout-path = "serial0:115200n8";
-		bootargs = "earlycon console=tty0 PMOS_NOSPLASH";
 
 		framebuffer@9c000000 {
 			compatible = "simple-framebuffer";
@@ -85,14 +62,14 @@
 
 	gpio_keys: gpio-keys {
 		compatible = "gpio-keys";
-		pinctrl-names = "default";
+
 		pinctrl-0 = <&vol_up_n>;
+		pinctrl-names = "default";
 
 		key-volume-up {
 			label = "Volume Up";
-			linux,code = <KEY_VOLUMEUP>;
 			gpios = <&pm6150l_gpios 2 GPIO_ACTIVE_LOW>;
-			debounce-interval = <15>;
+			linux,code = <KEY_VOLUMEUP>;
 		};
 	};
 
@@ -397,11 +374,6 @@
 		vdd-s7-supply = <&vph_pwr>;
 		vdd-s8-supply = <&vph_pwr>;
 
-		/*
-		 * There should be:
-		 * vdd-l1-l8-supply = <&vreg_s5a_2p0>;
-		 * But pm7150l doesn't have access to S5A.
-		 */
 		vdd-l2-l3-supply = <&vreg_s8c_1p2>;
 		vdd-l4-l5-l6-supply = <&vreg_bob>;
 		vdd-l7-l11-supply = <&vreg_bob>;
@@ -425,13 +397,11 @@
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
-		// always-on not supported
 		vreg_s8c_1p2: smps8 {
 			regulator-name = "vreg_s8c_1p2";
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <1730000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
-			//regulator-always-on;
 		};
 
 		vreg_l1c_1p8: ldo1 {
@@ -537,11 +507,6 @@
 	};
 };
 
-&camss {
-	vdda-supply = <&vdda_csi0_1p25>;
-	status = "okay";
-};
-
 &cci0 {
 	status = "okay";
 };
@@ -564,7 +529,7 @@
 
 &gpu {
 	zap-shader {
-		firmware-name = "qcom/sm7150/sunfish/a615_zap.mbn";
+		firmware-name = "qcom/sm7150/google/sunfish/a615_zap.mbn";
 	};
 };
 
@@ -572,116 +537,26 @@
 	status = "okay";
 	clock-frequency = <400000>;
 
-	st21nfc: nfc@8 {
-		compatible = "st,st21nfcb-i2c";
-		reg = <0x8>;
-
-		interrupt-parent = <&tlmm>;
-		interrupts = <37 IRQ_TYPE_NONE>;
-		reset-gpios = <&tlmm 67 GPIO_ACTIVE_HIGH>;
-
-		pinctrl-0 = <&nfc_default>;
-		pinctrl-1 = <&nfc_sleep>;
-		pinctrl-names = "default", "sleep";
-
-		ese-present;
-		uicc-present;
-	};
-
-	rt5514_i2c: codec@57 {
-		compatible = "realtek,rt5514";
-		reg = <0x57>;
-
-		//interrupt-parent = <&tlmm>;
-		//interrupts = <33 IRQ_TYPE_NONE>;
-
-		reset-gpio = <&tlmm 33 0>;
-		pinctrl-0 = <&rt5514_i2c_reset>;
-		pinctrl-names = "default";
-	};
+	/* st21nfc nfc@8 */
+	/* realtek,rt5514 codec@57 */
 };
 
 &i2c7 {
 	status = "okay";
 	clock-frequency = <1000000>;
 
-	/* st,fts (touchscreen) @ 49 */
+	/* st,fts touchscreen@49 */
 };
 
 &i2c9 {
 	status= "okay";
 	clock-frequency = <400000>;
 
-	pac1934: power-monitor@10 {
-		compatible = "microchip,pac1934";
-		reg = <0x10>;
+	/* microchip,pac1934 power-monitor@10 */
+	/* cirrus,cs35l41 speaker-amp@40 */
+	/* cirrus,cs35l41 speaker-amp@41 */
 
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		/* FIXME (Add a trigger to the driver) */
-		avdd-supply = <&vreg_l6c_3p0>;
-
-		channel@1 {
-			reg = <0x1>;
-			shunt-resistor-micro-ohms = <10000>;
-			label = "VDDCX_WITH_NPU";
-		};
-
-		channel@2 {
-			reg = <0x2>;
-			shunt-resistor-micro-ohms = <10000>;
-			label = "VDD_APC0";
-		};
-
-		channel@3 {
-			reg = <0x3>;
-			shunt-resistor-micro-ohms = <10000>;
-			label = "VDD_APC1";
-		};
-
-		channel@4 {
-			reg = <0x4>;
-			shunt-resistor-micro-ohms = <10000>;
-			label = "OLED";
-		};
-	};
-
-	cs35l41_l: speaker-amp@40 { /* EAR */
-		compatible = "cirrus,cs35l41";
-		reg = <0x40>;
-		interrupt-parent = <&tlmm>;
-		interrupts = <64 IRQ_TYPE_NONE>;
-		reset-gpios = <&pm6150l_gpios 8 GPIO_ACTIVE_HIGH>;
-
-		cirrus,boost-peak-milliamp = <3700>;
-		cirrus,boost-ind-nanohenry = <1000>;
-		cirrus,boost-cap-microfarad = <15>;
-		cirrus,asp-sdout-hiz = <3>;
-		cirrus,gpio2-src-select = <5>;
-		cirrus,gpio2-output-enable;
-
-		#sound-dai-cells = <1>;
-	};
-
-	cs35l41_r: speaker-amp@41 { /* SPK */
-		compatible = "cirrus,cs35l41";
-		reg = <0x41>;
-		interrupt-parent = <&tlmm>;
-		interrupts = <65 IRQ_TYPE_NONE>;
-		reset-gpios = <&pm6150l_gpios 11 GPIO_ACTIVE_HIGH>;
-
-		cirrus,boost-peak-milliamp = <3700>;
-		cirrus,boost-ind-nanohenry = <1000>;
-		cirrus,boost-cap-microfarad = <15>;
-		cirrus,asp-sdout-hiz = <3>;
-		cirrus,gpio2-src-select = <5>;
-		cirrus,gpio2-output-enable;
-
-		#sound-dai-cells = <1>;
-	};
-
-	fsa4480: switcher@43 {
+	typec-mux@43 {
 		compatible = "fcs,fsa4480";
 		reg = <0x43>;
 
@@ -699,66 +574,14 @@
 		};
 	};
 
-	/* st,m24c08 (e2prom) @ 50 */
-	/* ti,drv2624 (haptic) @ 5a */
-
-	slg51000: pmic@75 {
-		compatible = "dlg,slg51000";
-		reg = <0x75>;
-		dlg,cs-gpios = <&tlmm 4 GPIO_ACTIVE_HIGH>,
-			       <&tlmm 6 GPIO_ACTIVE_HIGH>;
-		dlg,enable-gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>,
-				   <&tlmm 5 GPIO_ACTIVE_HIGH>;
-
-		regulators {
-			slg51000_a_ldo1: ldo1 {
-				regulator-name = "slg51000_a_ldo1";
-				regulator-min-microvolt = <2250000>;
-				regulator-max-microvolt = <3300000>;
-			};
-
-			slg51000_a_ldo2: ldo2 {
-				regulator-name = "slg51000_a_ldo2";
-				regulator-min-microvolt = <2250000>;
-				regulator-max-microvolt = <3300000>;
-			};
-
-			slg51000_a_ldo3: ldo3 {
-				regulator-name = "slg51000_a_ldo3";
-				regulator-min-microvolt = <1200000>;
-				regulator-max-microvolt = <3750000>;
-			};
-
-			slg51000_a_ldo4: ldo4 {
-				regulator-name = "slg51000_a_ldo4";
-				regulator-min-microvolt = <1200000>;
-				regulator-max-microvolt = <3750000>;
-			};
-
-			slg51000_a_ldo5: ldo5 {
-				regulator-name = "slg51000_a_ldo5";
-				regulator-min-microvolt = <500000>;
-				regulator-max-microvolt = <1200000>;
-			};
-
-			slg51000_a_ldo6: ldo6 {
-				regulator-name = "slg51000_a_ldo6";
-				regulator-min-microvolt = <500000>;
-				regulator-max-microvolt = <1200000>;
-			};
-
-			slg51000_a_ldo7: ldo7 {
-				regulator-name = "slg51000_a_ldo7";
-				regulator-min-microvolt = <1200000>;
-				regulator-max-microvolt = <3750000>;
-			};
-		};
-	};
+	/* st,m24c08 e2prom@50 */
+	/* ti,drv2624 haptic@5a */
+	/* dlg,slg51000 pmic@75*/
 };
 
 &ipa {
 	memory-region = <&ipa_fw_mem>;
-	firmware-name = "qcom/sm7150/sunfish/ipa_fws.mbn";
+	firmware-name = "qcom/sm7150/google/sunfish/ipa_fws.mbn";
 	status = "okay";
 };
 
@@ -771,7 +594,8 @@
 	status = "okay";
 
 	panel: panel@0 {
-		compatible = "samsung,ams581vf01";
+		compatible = "google,ams581vf01-sunfish",
+			     "samsung,ams581vf01";
 		reg = <0>;
 
 		vddio-supply = <&vreg_l13a_1p8>;
@@ -781,7 +605,8 @@
 
 		reset-gpios = <&pm6150l_gpios 9 GPIO_ACTIVE_LOW>;
 
-		pinctrl-0 = <&panel_reset_pin &panel_te_pin>;
+		pinctrl-0 = <&lcd_reset_n>,
+			    <&mdp_vsync_p>;
 		pinctrl-names = "default";
 
 		port {
@@ -800,11 +625,6 @@
 
 &mdss_dsi0_phy {
 	vdds-supply = <&vdda_mipi_dsi0_pll>;
-	status = "okay";
-};
-
-&pm6150_qgauge {
-	monitored-battery = <&battery>;
 	status = "okay";
 };
 
@@ -888,7 +708,7 @@
 		power-source = <0>;
 	};
 
-	panel_reset_pin: panel-reset-state {
+	lcd_reset_n: lcd-reset-n-state {
 		pins = "gpio9";
 		function = PMIC_GPIO_FUNC_FUNC1;
 		qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
@@ -938,90 +758,28 @@
 	status = "okay";
 };
 
-&q6afedai {
-	qi2s@20 {
-		reg = <TERTIARY_MI2S_RX>;
-		qcom,sd-lines = <0>;
-	};
-
-	qi2s@21 {
-		reg = <TERTIARY_MI2S_TX>;
-		qcom,sd-lines = <1>;
-	};
-};
-
-&q6asmdai {
-	dai@0 {
-		reg = <0>;
-	};
-
-	dai@1 {
-		reg = <1>;
-	};
-};
-
 &remoteproc_adsp {
-	firmware-name = "qcom/sm7150/sunfish/adsp.mbn";
+	firmware-name = "qcom/sm7150/google/sunfish/adsp.mbn";
 	status = "okay";
 };
 
 &remoteproc_cdsp {
-	firmware-name = "qcom/sm7150/sunfish/cdsp.mbn";
+	firmware-name = "qcom/sm7150/google/sunfish/cdsp.mbn";
 	status = "okay";
 };
 
 &remoteproc_mpss {
-	firmware-name = "qcom/sm7150/sunfish/modem.mbn";
+	firmware-name = "qcom/sm7150/google/sunfish/modem.mbn";
 	status = "okay";
-};
-
-&sound {
-	compatible = "qcom,sm8250-sndcard";
-	pinctrl-0 = <&ter_mi2s_active>;
-	pinctrl-names = "default";
-	model = "Google Pixel 4a";
-
-	mm1-dai-link {
-		link-name = "MultiMedia1";
-		cpu {
-			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
-		};
-	};
-
-	i2s-dai-link {
-		link-name = "Speakers Playback";
-		cpu {
-			sound-dai = <&q6afedai TERTIARY_MI2S_RX>;
-		};
-
-		platform {
-			sound-dai = <&q6routing>;
-		};
-
-		codec {
-			sound-dai = <&cs35l41_l 0>, <&cs35l41_r 1>;
-		};
-	};
 };
 
 &spi0 {
-	clock-frequency = <20000000>;
 	status = "okay";
 
-	rt5514_spi: codec@0 {
-		compatible = "realtek,rt5514";
-		reg = <0>;
-
-		interrupt-parent = <&tlmm>;
-		interrupts = <58 IRQ_TYPE_NONE>;
-
-		pinctrl-0 = <&rt5514_spi_default>;
-		pinctrl-names = "default";
-	};
+	/* realtek,rt5514 codec@0 */
 };
 
 &spi1 {
-	clock-frequency = <8000000>;
 	status = "okay";
 
 	/* google,citadel @ 0 */
@@ -1031,65 +789,11 @@
 &tlmm {
 	gpio-reserved-ranges = <59 4>;
 
-	panel_te_pin: panel-te-state {
+	mdp_vsync_p: mdp-vsync-p-state {
 		pins = "gpio10";
 		function = "mdp_vsync";
 		drive-strength = <2>;
 		bias-pull-down;
-	};
-
-	haptic_reset: haptic-reset-state {
-		pins = "gpio11";
-		function = "gpio";
-		drive-strength = <2>;
-		output-low;
-		bias-disable;
-	};
-
-	nfc_default: nfc-default-state {
-		pins = "gpio31", "gpio37", "gpio67", "gpio94";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-pull-up;
-	};
-
-	nfc_sleep: nfc-sleep-state {
-		pins = "gpio31", "gpio67", "gpio94";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	rt5514_i2c_reset: rt5514-reset-state {
-		pins = "gpio33";
-		function = "gpio";
-		drive-strength = <2>;
-		output-high;
-	};
-
-	rt5514_spi_default: rt5514-spi-default-state {
-		handshake-ack-pins {
-			pins = "gpio30";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-pull-down;
-			input-enable;
-		};
-
-		handshake-pins {
-			pins = "gpio57";
-			function = "gpio";
-			drive-strength = <2>;
-			output-low;
-		};
-
-		irq-pins {
-			pins = "gpio58";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-pull-down;
-			input-enable;
-		};
 	};
 
 	qup_uart3_sleep: qup-uart3-sleep-state {
@@ -1124,8 +828,10 @@
 	interrupts-extended = <&intc GIC_SPI 604 IRQ_TYPE_LEVEL_HIGH>,
 			      <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
 
-	pinctrl-names = "default", "sleep";
 	pinctrl-1 = <&qup_uart3_sleep>;
+	pinctrl-names = "default",
+			"sleep";
+
 	status = "okay";
 
 	bluetooth: bluetooth {
@@ -1179,11 +885,6 @@
 	vdda-pll-supply = <&vdda_usb_hs_1p8>;
 	vdda-phy-dpdm-supply = <&vdda_usb_hs_3p1>;
 	status = "okay";
-};
-
-&venus {
-	firmware-name = "qcom/sm7150/sunfish/venus.mbn";
-	//status = "okay";
 };
 
 &wifi {

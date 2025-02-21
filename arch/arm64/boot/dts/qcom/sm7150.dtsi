@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 /*
- * Copyright (c) 2024, Danila Tikhonov <danila@jiaxyga.com>
- * Copyright (c) 2024, David Wronek <david@mainlining.org>
- * Copyright (c) 2024, Jens Reidel <adrian@travitia.xyz>
+ * Copyright (c) 2025, Danila Tikhonov <danila@jiaxyga.com>
+ * Copyright (c) 2025, David Wronek <david@mainlining.org>
+ * Copyright (c) 2025, Jens Reidel <adrian@travitia.xyz>
  */
 
 #include <dt-bindings/clock/qcom,gpucc-sc7180.h>
@@ -923,8 +923,6 @@
 			clocks = <&rpmhcc RPMH_CXO_CLK>,
 				 <&rpmhcc RPMH_CXO_CLK_A>,
 				 <&sleep_clk>;
-
-			power-domains = <&rpmhpd RPMHPD_CX>;
 
 			#clock-cells = <1>;
 			#reset-cells = <1>;
@@ -1931,9 +1929,6 @@
 			qcom,bcm-voters = <&apps_bcm_voter>;
 
 			#interconnect-cells = <2>;
-
-			clocks = <&gcc GCC_AGGRE_UFS_PHY_AXI_CLK>,
-				 <&gcc GCC_AGGRE_USB3_PRIM_AXI_CLK>;
 		};
 
 		aggre2_noc: interconnect@1700000 {
@@ -1943,8 +1938,6 @@
 			qcom,bcm-voters = <&apps_bcm_voter>;
 
 			#interconnect-cells = <2>;
-
-			clocks = <&rpmhcc RPMH_IPA_CLK>;
 		};
 
 		mmss_noc: interconnect@1740000 {
@@ -2653,7 +2646,7 @@
 
 		remoteproc_cdsp: remoteproc@8300000 {
 			compatible = "qcom,sm7150-cdsp-pas",
-				     "qcom,sc7180-cdsp-pas";
+				     "qcom,sc7280-cdsp-pas";
 			reg = <0 0x08300000 0 0x10000>;
 
 			interrupts-extended = <&intc GIC_SPI 578 IRQ_TYPE_LEVEL_HIGH>,
@@ -2953,7 +2946,7 @@
 			power-domain-names = "cx",
 					     "gx";
 
-			iommus = <&adreno_smmu 5 0x0>;
+			iommus = <&adreno_smmu 5>;
 
 			qcom,qmp = <&aoss_qmp>;
 
@@ -3985,8 +3978,6 @@
 
 			interrupts = <GIC_SPI 0 IRQ_TYPE_EDGE_RISING>;
 		};
-
-		sound: sound { };
 
 		timer@17c20000 {
 			compatible = "arm,armv7-timer-mem";
